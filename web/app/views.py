@@ -1,10 +1,9 @@
-from datetime import datetime
 
 
 from django.shortcuts import render
 
-# Create your views here.
-from django.http import HttpResponse, HttpRequest, HttpResponseRedirect
+from django.http import HttpResponseRedirect
+from django.core.exceptions import ObjectDoesNotExist
 
 from .scraping import ScrapingHelper
 from .models import Media, Hashtag, User
@@ -14,7 +13,12 @@ MYINSTAGRAM_URL = 'https://www.instagram.com/ivanivanov8923'
 
 def index(request):
     hashtags = Hashtag.objects.all()
-    context = {'user': User.objects.all()[0],
+    try:
+        user = User.objects.get(username=MYINSTAGRAM_URL.split('/')[-1])
+    except ObjectDoesNotExist:
+        user = User(username=MYINSTAGRAM_URL.split('/')[-1])
+
+    context = {'user': user,
                'hashtags': hashtags}
     if request.method == 'GET' and 'hashtag' in request.GET:
         if request.GET['hashtag'] == 'all':
@@ -34,7 +38,6 @@ def scraping(request):
         sh.scrap()
     except Exception as error:
         print('ERROR:', error)
-        raise
     finally:
         sh.destroy_wd()
     return HttpResponseRedirect('/')

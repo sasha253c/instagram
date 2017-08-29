@@ -1,7 +1,6 @@
 import time
 import json
 import re
-from pprint import pprint
 import datetime
 import os
 import shutil
@@ -13,13 +12,10 @@ import requests
 from bs4 import BeautifulSoup
 from django.db import IntegrityError
 
-
 from .models import User, Media, Hashtag
 
 
 DIRNAME_IMAGES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'app', 'images')
-BROWSER_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'browser', 'chromedriver')
-print(BROWSER_PATH)
 MAX_WORKERS = 25
 
 
@@ -34,12 +30,9 @@ class ScrapingHelper:
         self.wd.implicitly_wait(5)
         self.wd.get(self.url)
 
-    def destroy_wd(self):
-        self.wd.close()
 
     def scrap(self):
         medias = []
-        print('Dowloading...')
         self.scroll_page(scroll=10)
         bsObj = BeautifulSoup(self.wd.page_source, 'lxml')
         for element in bsObj.find('article').find('div', {'class': '_cmdpi'}).find_all('a'):
@@ -50,13 +43,12 @@ class ScrapingHelper:
             else:
                 media.type = 'i'
             medias.append(media)
-            # print(media)
         medias = self.download_many(medias)
         for media in medias:
             hashtags = media.hashtags_[:]
             try:
                 media.author.save()
-            except IntegrityError as error:
+            except IntegrityError:
                 media.author = User.objects.get(user_id=media.author.user_id)
 
             try:
@@ -83,16 +75,12 @@ class ScrapingHelper:
                 pass
             for __ in range(5):
                 self.wd.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                #print(wd.find_element_by_tag_name('article').size['height'])
                 time.sleep(0.3)
             if page_height == self.wd.find_element_by_tag_name('article').size['height']:
                 break
 
     def download_many(self, medias):
         new_medias = []
-        # for m in medias:
-        #     new_medias.append(self.download_one(m))
-
         workers = min(MAX_WORKERS, len(medias))
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
             future_to_media = {executor.submit(self.download_one, media): media for media in medias}
@@ -101,10 +89,8 @@ class ScrapingHelper:
                     data = future.result()
                 except Exception as exc:
                     print('%r generated an exception: %s' % (future_to_media[future], exc))
-                    raise
                 else:
                     new_medias.append(data)
-                    # print(data)
         return new_medias
 
     def download_one(self, media):
@@ -143,8 +129,8 @@ class ScrapingHelper:
             media.url = url_video_pattern.findall(r.text)[0]
             r = requests.get(media.url, stream=True)
         if r.status_code == 200:
-            if not os.path.exists(os.path.join(DIRNAME_IMAGES, media.filepath+ media.url[-4:])):
-                with open(os.path.join(DIRNAME_IMAGES, media.filepath+ media.url[-4:]), 'wb') as f:
+            if not os.path.exists(os.path.join(DIRNAME_IMAGES, media.filepath)):
+                with open(os.path.join(DIRNAME_IMAGES, media.filepath), 'wb') as f:
                     r.raw.decode_content = True
                     shutil.copyfileobj(r.raw, f)
         return media
@@ -153,3 +139,6 @@ class ScrapingHelper:
     def get_hashtags_from_title(title):
         hashtag_pattern = re.compile(r'#(.*?) ')
         return [Hashtag(text=hashtag) for hashtag in set(hashtag_pattern.findall(title+' '))]  # set() without copies hashtags
+
+    def destroy_wd(self):
+        self.wd.close()

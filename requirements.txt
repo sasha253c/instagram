@@ -1,7 +1,7 @@
-requests
+requests==2.18.4
 beautifulsoup4==4.5.0
 selenium==2.53.6
-psycopg2
+psycopg2==2.7.3.1
 beautifulsoup4==4.5.0
-lxml
+lxml==3.7.3
 django==1.9
