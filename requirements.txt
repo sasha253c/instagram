@@ -1,0 +1,7 @@
+requests
+beautifulsoup4==4.5.0
+selenium==2.53.6
+psycopg2
+beautifulsoup4==4.5.0
+lxml
+django==1.9
