@@ -13,10 +13,13 @@ import requests
 from bs4 import BeautifulSoup
 from django.db import IntegrityError
 
+
 from .models import User, Media, Hashtag
 
 
 DIRNAME_IMAGES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'app', 'images')
+BROWSER_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'browser', 'chromedriver')
+print(BROWSER_PATH)
 MAX_WORKERS = 25
 
 
