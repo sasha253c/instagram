@@ -1,11 +1,10 @@
 li {
     width: 30%;
-    display: inline-block;
-    /*float:left;*/
+    float:left;
     text-align:center;
-    border: 1px solid black;
+    /*border: 1px solid black;*/
     list-style: none;
-    margin: 11px 5px;
+    margin: 10px 5px;
     padding: 5px;
 }
 
